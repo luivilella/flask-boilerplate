@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: dc-postgres
+    image: postgres:11.0
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./docker/db/.env
+    environment:
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - ./local/postgres/data:/var/lib/postgresql/data
+      - ./local/postgres/bkp:/backup
+    networks:
+      - app-network
+
+  app:
+    container_name: dc-app
+    build:
+      dockerfile: ./docker/application/Dockerfile
+      context: .
+    depends_on:
+      - postgres
+    links:
+      - postgres:postgres-host
+    command: ["/bin/sh"]
+    stdin_open: true
+    tty: true
+    ports:
+      - '5000:5000'
+    volumes:
+      - .:/deploy
+    working_dir: /deploy/application
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
